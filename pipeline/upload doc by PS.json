@@ -1,0 +1,40 @@
+{
+	"name": "upload doc by PS",
+	"properties": {
+		"activities": [
+			{
+				"name": "Upload by PS",
+				"type": "WebHook",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": "https://b5b3067a-61a1-4b8f-a397-70fc1a2fea31.webhook.we.azure-automation.net/webhooks?token=fYvfmbghNoMgaNN0orBX7NGlScLJVN11SuKfR%2f1LBwY%3d",
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/json"
+					},
+					"body": {
+						"value": "@json(concat(\n    '{\n        \"AFASklanNr\": ',pipeline().globalParameters.KlantNr,',\n        \"XMLtoken\": \"',pipeline().globalParameters.AFASXMLtoken,'\",\n        \"TestOmgeving\": ',toLower(string(pipeline().globalParameters.AfasTest)),',\n        \"InternalRowId\": ',string(pipeline().parameters.InternalRowId),',\n        \"ADFrunId\": \"',pipeline().RunId,'\",\n        \"Database\": \"',pipeline().globalParameters.Database,'\"\n\n    }'\n))",
+						"type": "Expression"
+					},
+					"timeout": "00:10:00"
+				}
+			}
+		],
+		"parameters": {
+			"InternalRowId": {
+				"type": "int"
+			}
+		},
+		"folder": {
+			"name": "Upload"
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-01-10T12:39:19Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

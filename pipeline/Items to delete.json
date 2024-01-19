@@ -1,0 +1,91 @@
+{
+	"name": "Items to delete",
+	"properties": {
+		"activities": [
+			{
+				"name": "Items to delete",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "@pipeline().parameters.deleteQry",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "Database",
+						"type": "DatasetReference",
+						"parameters": {
+							"TableName": "-"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Delete item",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Items to delete",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Items to delete').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Delete dossieritem",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "Delete dossieritem",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"dossieritem": {
+										"value": "@item().Dossieritem",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"deleteQry": {
+				"type": "string",
+				"defaultValue": "select Dossieritem from verwerkt"
+			}
+		},
+		"folder": {
+			"name": "Delete"
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-01-09T09:58:02Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

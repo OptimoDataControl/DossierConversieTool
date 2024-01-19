@@ -1,0 +1,96 @@
+{
+	"name": "GET AFAS",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get GetConnectoren with params",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "Database",
+						"type": "DatasetReference",
+						"parameters": {
+							"TableName": "VW_PipeLineParams"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach row",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get GetConnectoren with params",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get GetConnectoren with params').output.value",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"batchCount": 4,
+					"activities": [
+						{
+							"name": "Get AFAS data",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "Default_Get_AFAS_V1",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"GetConnectorId": {
+										"value": "@item().getConnector",
+										"type": "Expression"
+									},
+									"TableName": {
+										"value": "@item().tableName",
+										"type": "Expression"
+									},
+									"_applicatieNaam": "AFAS",
+									"_onderdeel": {
+										"value": "@item().Onderdeel",
+										"type": "Expression"
+									},
+									"Take": {
+										"value": "@item().Take",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "Download"
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-01-02T21:46:09Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

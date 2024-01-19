@@ -1,0 +1,92 @@
+{
+	"name": "Select item2upload",
+	"properties": {
+		"activities": [
+			{
+				"name": "InternalRowIds",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "@concat(\n    'select ',\n    if(\n        equals(pipeline().parameters.RowsToProcess, -1),\n            '',\n            concat('top(',string(pipeline().parameters.RowsToProcess),') ')\n    ),\n    'S.InternalRowId from teverwerken as S ',\n    'left join (select distinct InternalRowId from Verwerkt) as P ',\n\t'on P.InternalRowId = S.InternalRowId ',\n\t'where P.InternalRowId is null '\n\t\n)",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "Database",
+						"type": "DatasetReference",
+						"parameters": {
+							"TableName": "-"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Upload docs",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "InternalRowIds",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('InternalRowIds').output.value",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"activities": [
+						{
+							"name": "upload doc",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "upload doc",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"InternalRowId": {
+										"value": "@item().InternalRowId",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"RowsToProcess": {
+				"type": "int",
+				"defaultValue": -1
+			}
+		},
+		"folder": {
+			"name": "Upload"
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-01-10T11:02:02Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

@@ -1,0 +1,13 @@
+{
+	"name": "masterdb",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "MasterDB",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

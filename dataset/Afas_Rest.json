@@ -1,0 +1,28 @@
+{
+	"name": "Afas_Rest",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "Afas_Rest",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"GetConnectorId": {
+				"type": "string"
+			},
+			"Take": {
+				"type": "int",
+				"defaultValue": 1000
+			}
+		},
+		"annotations": [],
+		"type": "RestResource",
+		"typeProperties": {
+			"relativeUrl": {
+				"value": "@concat('connectors/',dataset().GetConnectorId,'?skip={offset}','&take=',string(dataset().Take))",
+				"type": "Expression"
+			}
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

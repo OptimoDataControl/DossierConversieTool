@@ -1,0 +1,110 @@
+{
+	"name": "Delete dossieritem",
+	"properties": {
+		"activities": [
+			{
+				"name": "UploadDoc2AFAS",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "url",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": {
+						"value": "@variables('url')",
+						"type": "Expression"
+					},
+					"method": "DELETE",
+					"headers": {
+						"Authorization": {
+							"value": "@concat(\n    'AfasToken ',base64(pipeline().globalParameters.AFASXMLtoken)\n)",
+							"type": "Expression"
+						},
+						"Content-Type": "application/json; charset=utf-8"
+					}
+				}
+			},
+			{
+				"name": "url",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "url",
+					"value": {
+						"value": "@concat('https://',pipeline().globalParameters.KlantNr,'.rest',if(equals(pipeline().globalParameters.AfasTest, true), 'test',''),'.afas.online/ProfitRestServices/connectors/KnSubject/KnSubject/@SbId/',string(pipeline().parameters.dossieritem))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "delete from log",
+				"type": "Script",
+				"dependsOn": [
+					{
+						"activity": "UploadDoc2AFAS",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "Database",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"type": "NonQuery",
+							"text": {
+								"value": "@concat(\n    'delete from Verwerkt where dossieritem = ', string(pipeline().parameters.dossieritem)\n)",
+								"type": "Expression"
+							}
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
+			}
+		],
+		"parameters": {
+			"dossieritem": {
+				"type": "int"
+			}
+		},
+		"variables": {
+			"url": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Delete"
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-01-09T09:58:02Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

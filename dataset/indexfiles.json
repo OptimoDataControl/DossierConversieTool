@@ -1,0 +1,36 @@
+{
+	"name": "indexfiles",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "sftp",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"sftpFolderPath": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "SftpLocation",
+				"folderPath": {
+					"value": "@concat(\n    '/',\n    dataset().sftpFolderPath,\n    '/indexfiles/'\n    )",
+					"type": "Expression"
+				}
+			},
+			"columnDelimiter": ";",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "verzuimmelding_id;email_details_id;werknemer_id;folder;from;to;subject;date;login_gebruiker;sofinummer;email_bestand",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

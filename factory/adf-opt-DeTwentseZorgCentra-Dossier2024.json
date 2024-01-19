@@ -1,0 +1,33 @@
+{
+	"name": "adf-opt-DeTwentseZorgCentra-Dossier2024",
+	"properties": {
+		"globalParameters": {
+			"sftpFolderPath": {
+				"type": "string",
+				"value": "conv-optimo/De Twentse Zorgcentra - Dossierconversie"
+			},
+			"KlantNr": {
+				"type": "string",
+				"value": "68522"
+			},
+			"AfasTest": {
+				"type": "bool",
+				"value": false
+			},
+			"AFASXMLtoken": {
+				"type": "string",
+				"value": "<token><version>1</version><data>579355FC105C4427AF1BDA45BD206ADDDE1555C3FCF446728C78C0A09C05C1DA</data></token>"
+			},
+			"Database": {
+				"type": "string",
+				"value": "db-opt-DeTwentseZorgCentra-Dossier2024"
+			}
+		}
+	},
+	"location": "westeurope",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "4a01b325-79ec-4d53-b209-2394bb84883c",
+		"tenantId": "7cc4e248-064b-4990-a234-03d3cadaf97f"
+	}
+}

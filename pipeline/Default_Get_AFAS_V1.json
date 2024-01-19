@@ -1,0 +1,342 @@
+{
+	"name": "Default_Get_AFAS_V1",
+	"properties": {
+		"activities": [
+			{
+				"name": "GetMapping",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderStoredProcedureName": "[dbo].[SP_DynMappingsFromAFAS]",
+						"storedProcedureParameters": {
+							"tableName": {
+								"type": "String",
+								"value": {
+									"value": "@pipeline().parameters.TableName",
+									"type": "Expression"
+								}
+							}
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "Database",
+						"type": "DatasetReference",
+						"parameters": {
+							"TableName": {
+								"value": "@pipeline().parameters.TableName",
+								"type": "Expression"
+							}
+						}
+					}
+				}
+			},
+			{
+				"name": "GetAFASdata",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "GetMapping",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "RestSource",
+						"httpRequestTimeout": "00:01:40",
+						"requestInterval": "00.00:00:00.010",
+						"requestMethod": "GET",
+						"paginationRules": {
+							"EndCondition:$.rows": "Empty",
+							"QueryParameters.{offset}": {
+								"value": "@concat('RANGE:0::', string(pipeline().parameters.Take))",
+								"type": "Expression"
+							}
+						}
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"preCopyScript": {
+							"value": "@{concat('if exists(select 1 from INFORMATION_SCHEMA.TABLES where TABLE_NAME = ''',pipeline().parameters.TableName,''') truncate table ',pipeline().parameters.TableName)}",
+							"type": "Expression"
+						},
+						"writeBehavior": "insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"value": "@json(activity('GetMapping').output.firstRow.output)",
+						"type": "Expression"
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Afas_Rest",
+						"type": "DatasetReference",
+						"parameters": {
+							"GetConnectorId": {
+								"value": "@pipeline().parameters.GetConnectorId",
+								"type": "Expression"
+							},
+							"Take": {
+								"value": "@pipeline().parameters.Take",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "Database",
+						"type": "DatasetReference",
+						"parameters": {
+							"TableName": {
+								"value": "@pipeline().parameters.TableName",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "Count",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "GetAFASdata",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "Count",
+					"value": {
+						"value": "@string(activity('GetAFASdata').output.rowsCopied)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Foutmelding",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "GetAFASdata",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "Foutmelding",
+					"value": {
+						"value": "@activity('GetAFASdata').output.errors[0].Message",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "LOG",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Count",
+						"dependencyConditions": [
+							"Skipped",
+							"Completed"
+						]
+					},
+					{
+						"activity": "Foutmelding",
+						"dependencyConditions": [
+							"Skipped",
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[SP_LOG]",
+					"storedProcedureParameters": {
+						"AantalOpgehaald": {
+							"value": {
+								"value": "@int(variables('Count'))",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"ActieSuccesfull": {
+							"value": {
+								"value": "@equals(activity('GetAFASdata').output.executionDetails[0].status, 'Succeeded')",
+								"type": "Expression"
+							},
+							"type": "Boolean"
+						},
+						"ApplicatieNaam": {
+							"value": {
+								"value": "@pipeline().parameters._applicatieNaam",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"deleteKlantLogAfterDays": {
+							"value": null,
+							"type": "Int32"
+						},
+						"End": {
+							"value": null,
+							"type": "Boolean"
+						},
+						"Foutmelding": {
+							"value": {
+								"value": "@variables('Foutmelding')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"GetActie": {
+							"value": "true",
+							"type": "Boolean"
+						},
+						"InfoOmschrijving": {
+							"value": null,
+							"type": "String"
+						},
+						"Koppeling": {
+							"value": "Dossierconversie",
+							"type": "String"
+						},
+						"NaarKlant": {
+							"value": "true",
+							"type": "Boolean"
+						},
+						"Onderdeel": {
+							"value": {
+								"value": "@pipeline().parameters._onderdeel",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"OnderdeelObjectType": {
+							"value": null,
+							"type": "String"
+						},
+						"OnderdeelObjectWaarde": {
+							"value": null,
+							"type": "String"
+						},
+						"ProfitLogReferentie": {
+							"value": null,
+							"type": "String"
+						},
+						"Start": {
+							"value": null,
+							"type": "Boolean"
+						},
+						"UpdateActie": {
+							"value": null,
+							"type": "Boolean"
+						},
+						"UpdateIsMutatie": {
+							"value": null,
+							"type": "Boolean"
+						},
+						"versie": {
+							"value": null,
+							"type": "String"
+						},
+						"WebserviceResultCode": {
+							"value": null,
+							"type": "Int32"
+						},
+						"WebserviceResultText": {
+							"value": null,
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "Database",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"_applicatieNaam": {
+				"type": "string",
+				"defaultValue": "AFAS"
+			},
+			"_onderdeel": {
+				"type": "string"
+			},
+			"GetConnectorId": {
+				"type": "string"
+			},
+			"TableName": {
+				"type": "string"
+			},
+			"Take": {
+				"type": "int",
+				"defaultValue": 10000
+			},
+			"urlParam": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"Count": {
+				"type": "String",
+				"defaultValue": "-1"
+			},
+			"Foutmelding": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "V1/GET V1/AFAS V1"
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-01-02T14:39:13Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

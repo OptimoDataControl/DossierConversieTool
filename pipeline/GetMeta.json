@@ -1,0 +1,131 @@
+{
+	"name": "GetMeta",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get omgeving",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "RestSource",
+						"additionalColumns": [
+							{
+								"name": "Key",
+								"value": "Omgeving"
+							}
+						],
+						"httpRequestTimeout": "00:01:40",
+						"requestInterval": "00.00:00:00.010",
+						"requestMethod": "GET",
+						"paginationRules": {
+							"supportRFC5988": "true"
+						}
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"writeBehavior": "upsert",
+						"upsertSettings": {
+							"useTempDB": true,
+							"keys": [
+								"key"
+							]
+						},
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"path": "$['info']['envid']"
+								},
+								"sink": {
+									"name": "value",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "$['Key']"
+								},
+								"sink": {
+									"name": "key",
+									"type": "String"
+								}
+							}
+						]
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Afas_Rest",
+						"type": "DatasetReference",
+						"parameters": {
+							"GetConnectorId": "metainfo",
+							"Take": 100
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "Database",
+						"type": "DatasetReference",
+						"parameters": {
+							"TableName": "System_ProjectParams"
+						}
+					}
+				]
+			},
+			{
+				"name": "Omgeving2klantNr",
+				"type": "Script",
+				"dependsOn": [
+					{
+						"activity": "Get omgeving",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "Database",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"type": "NonQuery",
+							"text": "delete from System_ProjectParams where [key] = 'KlantNr'\ninsert into System_ProjectParams select 'KlantNr', substring([value], 2, 5) from System_ProjectParams where [key] = 'Omgeving'"
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
+			}
+		],
+		"folder": {
+			"name": "V1/GET V1/AFAS V1"
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-01-02T11:45:30Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
