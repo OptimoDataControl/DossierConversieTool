@@ -29,7 +29,7 @@
 					"method": "DELETE",
 					"headers": {
 						"Authorization": {
-							"value": "@concat(\n    'AfasToken ',base64(pipeline().globalParameters.AFASXMLtoken)\n)",
+							"value": "@concat(\n    'AfasToken ',base64(pipeline().parameters.AFAS_XMLtoken)\n)",
 							"type": "Expression"
 						},
 						"Content-Type": "application/json; charset=utf-8"
@@ -48,7 +48,7 @@
 				"typeProperties": {
 					"variableName": "url",
 					"value": {
-						"value": "@concat('https://',pipeline().globalParameters.KlantNr,'.rest',if(equals(pipeline().globalParameters.AfasTest, true), 'test',''),'.afas.online/ProfitRestServices/connectors/KnSubject/KnSubject/@SbId/',string(pipeline().parameters.dossieritem))",
+						"value": "@concat('https://',pipeline().parameters.AFAS_KlantNr,'.rest',if(equals(pipeline().parameters.AFAS_IsTestomgeving, true), 'test',''),'.afas.online/ProfitRestServices/connectors/KnSubject/KnSubject/SbId/',string(pipeline().parameters.dossieritem))",
 						"type": "Expression"
 					}
 				}
@@ -93,6 +93,15 @@
 		"parameters": {
 			"dossieritem": {
 				"type": "int"
+			},
+			"AFAS_XMLtoken": {
+				"type": "string"
+			},
+			"AFAS_KlantNr": {
+				"type": "string"
+			},
+			"AFAS_IsTestomgeving": {
+				"type": "bool"
 			}
 		},
 		"variables": {

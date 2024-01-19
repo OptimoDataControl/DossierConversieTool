@@ -20,7 +20,7 @@
 						"type": "DatasetReference",
 						"parameters": {
 							"sftpFolderPath": {
-								"value": "@pipeline().globalParameters.sftpFolderPath",
+								"value": "@pipeline().parameters.sFTPpath",
 								"type": "Expression"
 							}
 						}
@@ -117,7 +117,7 @@
 									"type": "DatasetReference",
 									"parameters": {
 										"sftpFolderPath": {
-											"value": "@pipeline().globalParameters.sftpFolderPath",
+											"value": "@pipeline().parameters.sFTPpath",
 											"type": "Expression"
 										}
 									}
@@ -177,6 +177,11 @@
 				}
 			}
 		],
+		"parameters": {
+			"sFTPpath": {
+				"type": "string"
+			}
+		},
 		"variables": {
 			"Name": {
 				"type": "String"
