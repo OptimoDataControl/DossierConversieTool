@@ -5,12 +5,16 @@
 			"referenceName": "Database",
 			"type": "LinkedServiceReference",
 			"parameters": {
-				"Database": {
+				"DatabaseUser": {
+					"value": "@dataset().DbUser",
+					"type": "Expression"
+				},
+				"DatabaseName": {
 					"value": "@dataset().Database",
 					"type": "Expression"
 				},
-				"DatabaseUser": {
-					"value": "@dataset().DbUser",
+				"DbPassword": {
+					"value": "@dataset().DbPassword",
 					"type": "Expression"
 				}
 			}
@@ -23,6 +27,9 @@
 				"type": "String"
 			},
 			"DbUser": {
+				"type": "String"
+			},
+			"DbPassword": {
 				"type": "String"
 			}
 		},
