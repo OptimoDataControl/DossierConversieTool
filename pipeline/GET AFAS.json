@@ -32,6 +32,10 @@
 							"DbUser": {
 								"value": "@pipeline().parameters.DbUser",
 								"type": "Expression"
+							},
+							"DbPassword": {
+								"value": "@pipeline().parameters.DbPassword",
+								"type": "Expression"
 							}
 						}
 					},
@@ -107,6 +111,9 @@
 			"IsAfasTest": {
 				"type": "bool",
 				"defaultValue": false
+			},
+			"DbPassword": {
+				"type": "String"
 			}
 		},
 		"folder": {

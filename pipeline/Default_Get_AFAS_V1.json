@@ -45,6 +45,10 @@
 							"DbUser": {
 								"value": "@pipeline().parameters.DbUser",
 								"type": "Expression"
+							},
+							"DbPassword": {
+								"value": "@pipeline().parameters.DbPassword",
+								"type": "Expression"
 							}
 						}
 					}
@@ -144,6 +148,10 @@
 							},
 							"DbUser": {
 								"value": "@pipeline().parameters.DbUser",
+								"type": "Expression"
+							},
+							"DbPassword": {
+								"value": "@pipeline().parameters.DbPassword",
 								"type": "Expression"
 							}
 						}
@@ -375,6 +383,9 @@
 				"type": "String"
 			},
 			"AfasXmlToken": {
+				"type": "String"
+			},
+			"DbPassword": {
 				"type": "String"
 			}
 		},
