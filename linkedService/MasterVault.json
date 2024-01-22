@@ -1,0 +1,10 @@
+{
+	"name": "MasterVault",
+	"properties": {
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://kv-opt-master.vault.azure.net/"
+		}
+	}
+}
