@@ -7,6 +7,11 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "adf-opt-DossierConversieTool"
 		},
+		"Database_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'Database'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=sql-dc-conversies.database.windows.net;Initial Catalog=@{linkedService().DatabaseName};User ID=@{linkedService().DatabaseUser};Password=@{linkedService().DbPassword}"
+		},
 		"MasterDB_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'MasterDB'"
@@ -14,11 +19,6 @@
 		"sftp_password": {
 			"type": "secureString",
 			"metadata": "Secure string for 'password' of 'sftp'"
-		},
-		"Database_connectionString": {
-			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'Database'",
-			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=sql-dc-conversies.database.windows.net;Initial Catalog=@{linkedService().Database};User ID=@{linkedService().DatabaseUser}"
 		},
 		"Afas_Rest_properties_typeProperties_url": {
 			"type": "string",
@@ -60,6 +60,30 @@
 					"url": "[parameters('Afas_Rest_properties_typeProperties_url')]",
 					"enableServerCertificateValidation": true,
 					"authenticationType": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Database')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"parameters": {
+					"DatabaseUser": {
+						"type": "String"
+					},
+					"DatabaseName": {
+						"type": "String"
+					},
+					"DbPassword": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('Database_connectionString')]"
 				}
 			},
 			"dependsOn": []
@@ -110,146 +134,6 @@
 				}
 			},
 			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/Afas_Rest')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "Afas_Rest",
-					"type": "LinkedServiceReference",
-					"parameters": {
-						"AfasKlantNr": {
-							"value": "@dataset().KlantNr",
-							"type": "Expression"
-						},
-						"IsAfasTest": {
-							"value": "@dataset().Test",
-							"type": "Expression"
-						}
-					}
-				},
-				"parameters": {
-					"GetConnectorId": {
-						"type": "string"
-					},
-					"Take": {
-						"type": "int",
-						"defaultValue": 1000
-					},
-					"KlantNr": {
-						"type": "String"
-					},
-					"Test": {
-						"type": "Bool"
-					}
-				},
-				"annotations": [],
-				"type": "RestResource",
-				"typeProperties": {
-					"relativeUrl": {
-						"value": "@concat('connectors/',dataset().GetConnectorId,'?skip={offset}','&take=',string(dataset().Take))",
-						"type": "Expression"
-					}
-				},
-				"schema": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/Afas_Rest')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/indexfiles')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "sftp",
-					"type": "LinkedServiceReference"
-				},
-				"parameters": {
-					"sftpFolderPath": {
-						"type": "String"
-					}
-				},
-				"annotations": [],
-				"type": "DelimitedText",
-				"typeProperties": {
-					"location": {
-						"type": "SftpLocation",
-						"folderPath": {
-							"value": "@concat(\n    '/',\n    dataset().sftpFolderPath,\n    '/'\n    )",
-							"type": "Expression"
-						}
-					},
-					"columnDelimiter": ";",
-					"escapeChar": "\\",
-					"firstRowAsHeader": true,
-					"quoteChar": "\""
-				},
-				"schema": [
-					{
-						"name": "verzuimmelding_id;email_details_id;werknemer_id;folder;from;to;subject;date;login_gebruiker;sofinummer;email_bestand",
-						"type": "String"
-					}
-				]
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/sftp')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/masterdb')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "MasterDB",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "AzureSqlTable",
-				"schema": [],
-				"typeProperties": {}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/MasterDB')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/Database')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"parameters": {
-					"Database": {
-						"type": "String"
-					},
-					"DatabaseUser": {
-						"type": "String"
-					}
-				},
-				"annotations": [],
-				"type": "AzureSqlDatabase",
-				"typeProperties": {
-					"connectionString": "[parameters('Database_connectionString')]",
-					"password": {
-						"type": "AzureKeyVaultSecret",
-						"store": {
-							"referenceName": "MasterVault",
-							"type": "LinkedServiceReference"
-						},
-						"secretName": {
-							"value": "@linkedService().Database",
-							"type": "Expression"
-						}
-					}
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/MasterVault')]"
-			]
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/Delete dossieritem')]",
@@ -378,6 +262,54 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/Afas_Rest')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "Afas_Rest",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"AfasKlantNr": {
+							"value": "@dataset().KlantNr",
+							"type": "Expression"
+						},
+						"IsAfasTest": {
+							"value": "@dataset().Test",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"GetConnectorId": {
+						"type": "string"
+					},
+					"Take": {
+						"type": "int",
+						"defaultValue": 1000
+					},
+					"KlantNr": {
+						"type": "String"
+					},
+					"Test": {
+						"type": "Bool"
+					}
+				},
+				"annotations": [],
+				"type": "RestResource",
+				"typeProperties": {
+					"relativeUrl": {
+						"value": "@concat('connectors/',dataset().GetConnectorId,'?skip={offset}','&take=',string(dataset().Take))",
+						"type": "Expression"
+					}
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/Afas_Rest')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/Database')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -386,12 +318,16 @@
 					"referenceName": "Database",
 					"type": "LinkedServiceReference",
 					"parameters": {
-						"Database": {
+						"DatabaseUser": {
+							"value": "@dataset().DbUser",
+							"type": "Expression"
+						},
+						"DatabaseName": {
 							"value": "@dataset().Database",
 							"type": "Expression"
 						},
-						"DatabaseUser": {
-							"value": "@dataset().DbUser",
+						"DbPassword": {
+							"value": "@dataset().DbPassword",
 							"type": "Expression"
 						}
 					}
@@ -404,6 +340,9 @@
 						"type": "String"
 					},
 					"DbUser": {
+						"type": "String"
+					},
+					"DbPassword": {
 						"type": "String"
 					}
 				},
@@ -420,6 +359,64 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/Database')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/indexfiles')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "sftp",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"sftpFolderPath": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "SftpLocation",
+						"folderPath": {
+							"value": "@concat(\n    '/',\n    dataset().sftpFolderPath,\n    '/'\n    )",
+							"type": "Expression"
+						}
+					},
+					"columnDelimiter": ";",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "verzuimmelding_id;email_details_id;werknemer_id;folder;from;to;subject;date;login_gebruiker;sofinummer;email_bestand",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/sftp')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/masterdb')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "MasterDB",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/MasterDB')]"
 			]
 		},
 		{
@@ -470,6 +467,10 @@
 									},
 									"DbUser": {
 										"value": "@pipeline().parameters.DbUser",
+										"type": "Expression"
+									},
+									"DbPassword": {
+										"value": "@pipeline().parameters.DbPassword",
 										"type": "Expression"
 									}
 								}
@@ -570,6 +571,10 @@
 									},
 									"DbUser": {
 										"value": "@pipeline().parameters.DbUser",
+										"type": "Expression"
+									},
+									"DbPassword": {
+										"value": "@pipeline().parameters.DbPassword",
 										"type": "Expression"
 									}
 								}
@@ -805,6 +810,9 @@
 					},
 					"AfasXmlToken": {
 						"type": "String"
+					},
+					"DbPassword": {
+						"type": "String"
 					}
 				},
 				"variables": {
@@ -971,6 +979,10 @@
 												"DbUser": {
 													"value": "@pipeline().parameters.DbUser",
 													"type": "Expression"
+												},
+												"DbPassword": {
+													"value": "@pipeline().parameters.DbPassword",
+													"type": "Expression"
 												}
 											}
 										}
@@ -1016,6 +1028,10 @@
 												"DbUser": {
 													"value": "@pipeline().parameters.DbUser",
 													"type": "Expression"
+												},
+												"DbPassword": {
+													"value": "@pipeline().parameters.DbPassword",
+													"type": "Expression"
 												}
 											}
 										}
@@ -1036,6 +1052,9 @@
 						"type": "string"
 					},
 					"DbUser": {
+						"type": "string"
+					},
+					"DbPassword": {
 						"type": "string"
 					}
 				},
@@ -1157,6 +1176,10 @@
 									"DbUser": {
 										"value": "@pipeline().parameters.DbUser",
 										"type": "Expression"
+									},
+									"DbPassword": {
+										"value": "@pipeline().parameters.DbPassword",
+										"type": "Expression"
 									}
 								}
 							}
@@ -1221,6 +1244,9 @@
 					},
 					"DbUser": {
 						"type": "String"
+					},
+					"DbPassword": {
+						"type": "String"
 					}
 				},
 				"folder": {
@@ -1274,6 +1300,10 @@
 									},
 									"DbUser": {
 										"value": "@pipeline().parameters.DbUser",
+										"type": "Expression"
+									},
+									"DbPassword": {
+										"value": "@pipeline().parameters.DbPassword",
 										"type": "Expression"
 									}
 								}
@@ -1335,6 +1365,9 @@
 					},
 					"DbUser": {
 						"type": "string"
+					},
+					"DbPassword": {
+						"type": "string"
 					}
 				},
 				"folder": {
@@ -1383,6 +1416,10 @@
 									},
 									"DbUser": {
 										"value": "@pipeline().parameters.DbUser",
+										"type": "Expression"
+									},
+									"DbPassword": {
+										"value": "@pipeline().parameters.DbPassword",
 										"type": "Expression"
 									}
 								}
@@ -1462,6 +1499,9 @@
 					"IsAfasTest": {
 						"type": "bool",
 						"defaultValue": false
+					},
+					"DbPassword": {
+						"type": "String"
 					}
 				},
 				"folder": {

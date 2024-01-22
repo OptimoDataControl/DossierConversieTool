@@ -10,7 +10,7 @@
 		"Database_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'Database'",
-			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=sql-dc-conversies.database.windows.net;Initial Catalog=@{linkedService().Database};User ID=@{linkedService().DatabaseUser}"
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=sql-dc-conversies.database.windows.net;Initial Catalog=@{linkedService().DatabaseName};User ID=@{linkedService().DatabaseUser};Password=@{linkedService().DbPassword}"
 		},
 		"MasterDB_connectionString": {
 			"type": "secureString",
@@ -89,6 +89,10 @@
 									},
 									"DbUser": {
 										"value": "@pipeline().parameters.DbUser",
+										"type": "Expression"
+									},
+									"DbPassword": {
+										"value": "@pipeline().parameters.DbPassword",
 										"type": "Expression"
 									}
 								}
@@ -189,6 +193,10 @@
 									},
 									"DbUser": {
 										"value": "@pipeline().parameters.DbUser",
+										"type": "Expression"
+									},
+									"DbPassword": {
+										"value": "@pipeline().parameters.DbPassword",
 										"type": "Expression"
 									}
 								}
@@ -424,6 +432,9 @@
 					},
 					"AfasXmlToken": {
 						"type": "String"
+					},
+					"DbPassword": {
+						"type": "String"
 					}
 				},
 				"variables": {
@@ -609,6 +620,10 @@
 									"DbUser": {
 										"value": "@pipeline().parameters.DbUser",
 										"type": "Expression"
+									},
+									"DbPassword": {
+										"value": "@pipeline().parameters.DbPassword",
+										"type": "Expression"
 									}
 								}
 							},
@@ -687,6 +702,9 @@
 					"IsAfasTest": {
 						"type": "bool",
 						"defaultValue": false
+					},
+					"DbPassword": {
+						"type": "String"
 					}
 				},
 				"folder": {
@@ -843,6 +861,10 @@
 												"DbUser": {
 													"value": "@pipeline().parameters.DbUser",
 													"type": "Expression"
+												},
+												"DbPassword": {
+													"value": "@pipeline().parameters.DbPassword",
+													"type": "Expression"
 												}
 											}
 										}
@@ -888,6 +910,10 @@
 												"DbUser": {
 													"value": "@pipeline().parameters.DbUser",
 													"type": "Expression"
+												},
+												"DbPassword": {
+													"value": "@pipeline().parameters.DbPassword",
+													"type": "Expression"
 												}
 											}
 										}
@@ -908,6 +934,9 @@
 						"type": "string"
 					},
 					"DbUser": {
+						"type": "string"
+					},
+					"DbPassword": {
 						"type": "string"
 					}
 				},
@@ -1029,6 +1058,10 @@
 									"DbUser": {
 										"value": "@pipeline().parameters.DbUser",
 										"type": "Expression"
+									},
+									"DbPassword": {
+										"value": "@pipeline().parameters.DbPassword",
+										"type": "Expression"
 									}
 								}
 							}
@@ -1093,6 +1126,9 @@
 					},
 					"DbUser": {
 						"type": "String"
+					},
+					"DbPassword": {
+						"type": "String"
 					}
 				},
 				"folder": {
@@ -1146,6 +1182,10 @@
 									},
 									"DbUser": {
 										"value": "@pipeline().parameters.DbUser",
+										"type": "Expression"
+									},
+									"DbPassword": {
+										"value": "@pipeline().parameters.DbPassword",
 										"type": "Expression"
 									}
 								}
@@ -1206,6 +1246,9 @@
 						"type": "string"
 					},
 					"DbUser": {
+						"type": "string"
+					},
+					"DbPassword": {
 						"type": "string"
 					}
 				},
@@ -1277,12 +1320,16 @@
 					"referenceName": "Database",
 					"type": "LinkedServiceReference",
 					"parameters": {
-						"Database": {
+						"DatabaseUser": {
+							"value": "@dataset().DbUser",
+							"type": "Expression"
+						},
+						"DatabaseName": {
 							"value": "@dataset().Database",
 							"type": "Expression"
 						},
-						"DatabaseUser": {
-							"value": "@dataset().DbUser",
+						"DbPassword": {
+							"value": "@dataset().DbPassword",
 							"type": "Expression"
 						}
 					}
@@ -1295,6 +1342,9 @@
 						"type": "String"
 					},
 					"DbUser": {
+						"type": "String"
+					},
+					"DbPassword": {
 						"type": "String"
 					}
 				},
@@ -1400,33 +1450,23 @@
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"parameters": {
-					"Database": {
+					"DatabaseUser": {
 						"type": "String"
 					},
-					"DatabaseUser": {
+					"DatabaseName": {
+						"type": "String"
+					},
+					"DbPassword": {
 						"type": "String"
 					}
 				},
 				"annotations": [],
 				"type": "AzureSqlDatabase",
 				"typeProperties": {
-					"connectionString": "[parameters('Database_connectionString')]",
-					"password": {
-						"type": "AzureKeyVaultSecret",
-						"store": {
-							"referenceName": "MasterVault",
-							"type": "LinkedServiceReference"
-						},
-						"secretName": {
-							"value": "@linkedService().Database",
-							"type": "Expression"
-						}
-					}
+					"connectionString": "[parameters('Database_connectionString')]"
 				}
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/MasterVault')]"
-			]
+			"dependsOn": []
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/MasterDB')]",

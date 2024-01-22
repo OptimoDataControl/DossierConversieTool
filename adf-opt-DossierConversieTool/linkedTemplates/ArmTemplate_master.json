@@ -10,7 +10,7 @@
 		"Database_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'Database'",
-			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=sql-dc-conversies.database.windows.net;Initial Catalog=@{linkedService().Database};User ID=@{linkedService().DatabaseUser}"
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=sql-dc-conversies.database.windows.net;Initial Catalog=@{linkedService().DatabaseName};User ID=@{linkedService().DatabaseUser};Password=@{linkedService().DbPassword}"
 		},
 		"MasterDB_connectionString": {
 			"type": "secureString",
@@ -63,14 +63,14 @@
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
 					},
+					"Database_connectionString": {
+						"value": "[parameters('Database_connectionString')]"
+					},
 					"MasterDB_connectionString": {
 						"value": "[parameters('MasterDB_connectionString')]"
 					},
 					"sftp_password": {
 						"value": "[parameters('sftp_password')]"
-					},
-					"Database_connectionString": {
-						"value": "[parameters('Database_connectionString')]"
 					},
 					"Afas_Rest_properties_typeProperties_url": {
 						"value": "[parameters('Afas_Rest_properties_typeProperties_url')]"

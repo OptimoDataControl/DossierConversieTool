@@ -6,7 +6,7 @@
 			"value": "adf-opt-DossierConversieTool"
 		},
 		"Database_connectionString": {
-			"value": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=sql-dc-conversies.database.windows.net;Initial Catalog=@{linkedService().Database};User ID=@{linkedService().DatabaseUser}"
+			"value": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=sql-dc-conversies.database.windows.net;Initial Catalog=@{linkedService().DatabaseName};User ID=@{linkedService().DatabaseUser};Password=@{linkedService().DbPassword}"
 		},
 		"MasterDB_connectionString": {
 			"value": ""
