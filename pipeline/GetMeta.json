@@ -124,7 +124,17 @@
 				"userProperties": [],
 				"linkedServiceName": {
 					"referenceName": "Database",
-					"type": "LinkedServiceReference"
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"Database": {
+							"value": "@pipeline().parameters.Database",
+							"type": "Expression"
+						},
+						"DatabaseUser": {
+							"value": "@pipeline().parameters.DbUser",
+							"type": "Expression"
+						}
+					}
 				},
 				"typeProperties": {
 					"scripts": [
