@@ -413,7 +413,10 @@
 				"annotations": [],
 				"type": "AzureSqlTable",
 				"schema": [],
-				"typeProperties": {}
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "master"
+				}
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/MasterDB')]"
@@ -760,10 +763,6 @@
 							"referenceName": "Database",
 							"type": "LinkedServiceReference",
 							"parameters": {
-								"Database": {
-									"value": "@pipeline().parameters.Database",
-									"type": "Expression"
-								},
 								"DatabaseUser": {
 									"value": "@pipeline().parameters.DbUser",
 									"type": "Expression"
@@ -1208,10 +1207,6 @@
 							"referenceName": "Database",
 							"type": "LinkedServiceReference",
 							"parameters": {
-								"Database": {
-									"value": "@pipeline().parameters.Database",
-									"type": "Expression"
-								},
 								"DatabaseUser": {
 									"value": "@pipeline().parameters.DbUser",
 									"type": "Expression"
