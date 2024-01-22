@@ -337,12 +337,16 @@
 					"referenceName": "Database",
 					"type": "LinkedServiceReference",
 					"parameters": {
-						"Database": {
+						"DatabaseUser": {
+							"value": "@pipeline().parameters.DbUser",
+							"type": "Expression"
+						},
+						"DatabaseName": {
 							"value": "@pipeline().parameters.Database",
 							"type": "Expression"
 						},
-						"DatabaseUser": {
-							"value": "@pipeline().parameters.DbUser",
+						"DbPassword": {
+							"value": "@pipeline().parameters.DbPassword",
 							"type": "Expression"
 						}
 					}
