@@ -131,6 +131,14 @@
 										"TableName": {
 											"value": "@activity('GetTable').output.firstRow.tableName",
 											"type": "Expression"
+										},
+										"Database": {
+											"value": "@pipeline().parameters.Database",
+											"type": "Expression"
+										},
+										"DbUser": {
+											"value": "@pipeline().parameters.DbUser",
+											"type": "Expression"
 										}
 									}
 								}
@@ -168,7 +176,15 @@
 									"referenceName": "Database",
 									"type": "DatasetReference",
 									"parameters": {
-										"TableName": "-"
+										"TableName": "-",
+										"Database": {
+											"value": "@pipeline().parameters.Database",
+											"type": "Expression"
+										},
+										"DbUser": {
+											"value": "@pipeline().parameters.DbUser",
+											"type": "Expression"
+										}
 									}
 								}
 							}
@@ -179,6 +195,12 @@
 		],
 		"parameters": {
 			"sFTPpath": {
+				"type": "string"
+			},
+			"Database": {
+				"type": "string"
+			},
+			"DbUser": {
 				"type": "string"
 			}
 		},
