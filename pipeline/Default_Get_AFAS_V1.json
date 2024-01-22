@@ -75,6 +75,12 @@
 						"httpRequestTimeout": "00:01:40",
 						"requestInterval": "00.00:00:00.010",
 						"requestMethod": "GET",
+						"additionalHeaders": {
+							"Authorization": {
+								"value": "@concat('AfasToken ', base64(pipeline().parameters.AfasXmlToken))",
+								"type": "Expression"
+							}
+						},
 						"paginationRules": {
 							"EndCondition:$.rows": "Empty",
 							"QueryParameters.{offset}": {
@@ -358,6 +364,9 @@
 				"type": "String"
 			},
 			"DbUser": {
+				"type": "String"
+			},
+			"AfasXmlToken": {
 				"type": "String"
 			}
 		},
