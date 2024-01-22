@@ -188,6 +188,10 @@
 										"DbUser": {
 											"value": "@pipeline().parameters.DbUser",
 											"type": "Expression"
+										},
+										"DbPassword": {
+											"value": "@pipeline().parameters.DbPassword",
+											"type": "Expression"
 										}
 									}
 								}
