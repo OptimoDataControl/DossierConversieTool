@@ -90,6 +90,30 @@
 									"Take": {
 										"value": "@item().Take",
 										"type": "Expression"
+									},
+									"AfasKlantNr": {
+										"value": "@pipeline().parameters.AfasKlantNr",
+										"type": "Expression"
+									},
+									"IsAfasTest": {
+										"value": "@pipeline().parameters.IsAfasTest",
+										"type": "Expression"
+									},
+									"Database": {
+										"value": "@pipeline().parameters.Database",
+										"type": "Expression"
+									},
+									"DbUser": {
+										"value": "@pipeline().parameters.DbUser",
+										"type": "Expression"
+									},
+									"AfasXmlToken": {
+										"value": "@pipeline().parameters.AfasXmlToken",
+										"type": "Expression"
+									},
+									"DbPassword": {
+										"value": "@pipeline().parameters.DbPassword",
+										"type": "Expression"
 									}
 								}
 							}
@@ -114,6 +138,9 @@
 			},
 			"DbPassword": {
 				"type": "String"
+			},
+			"AfasXmlToken": {
+				"type": "string"
 			}
 		},
 		"folder": {
