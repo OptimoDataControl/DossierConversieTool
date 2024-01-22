@@ -4,7 +4,7 @@
 		"annotations": [],
 		"type": "AzureKeyVault",
 		"typeProperties": {
-			"baseUrl": "https://kv-opt-master.vault.azure.net/"
+			"baseUrl": "https://kv-opt-databases.vault.azure.net/"
 		}
 	}
 }
