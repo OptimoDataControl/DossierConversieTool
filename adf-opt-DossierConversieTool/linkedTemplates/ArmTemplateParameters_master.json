@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "adf-opt-DossierConversieTool"
+		},
+		"Database_connectionString": {
+			"value": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=sql-dc-conversies.database.windows.net;Initial Catalog=@{linkedService().Database};User ID=@{linkedService().DatabaseUser}"
+		},
+		"MasterDB_connectionString": {
+			"value": ""
+		},
+		"sftp_password": {
+			"value": ""
+		},
+		"Afas_Rest_properties_typeProperties_url": {
+			"value": "@{concat('https://', linkedService().AfasKlantNr,'.rest',if(equals(linkedService().IsAfasTest, true), 'test', ''),'.afas.online/ProfitRestServices/')}"
+		},
+		"MasterVault_properties_typeProperties_baseUrl": {
+			"value": "https://kv-opt-databases.vault.azure.net/"
+		},
+		"sftp_properties_typeProperties_host": {
+			"value": "ftp.optimo.nl"
+		},
+		"sftp_properties_typeProperties_userName": {
+			"value": "datacontrol@optimo.nl"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}

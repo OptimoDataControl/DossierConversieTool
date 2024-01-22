@@ -1,0 +1,1479 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "adf-opt-DossierConversieTool"
+		},
+		"MasterDB_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'MasterDB'"
+		},
+		"sftp_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'sftp'"
+		},
+		"Database_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'Database'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=sql-dc-conversies.database.windows.net;Initial Catalog=@{linkedService().Database};User ID=@{linkedService().DatabaseUser}"
+		},
+		"Afas_Rest_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "@{concat('https://', linkedService().AfasKlantNr,'.rest',if(equals(linkedService().IsAfasTest, true), 'test', ''),'.afas.online/ProfitRestServices/')}"
+		},
+		"MasterVault_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://kv-opt-databases.vault.azure.net/"
+		},
+		"sftp_properties_typeProperties_host": {
+			"type": "string",
+			"defaultValue": "ftp.optimo.nl"
+		},
+		"sftp_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "datacontrol@optimo.nl"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/Afas_Rest')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"parameters": {
+					"AfasKlantNr": {
+						"type": "String"
+					},
+					"IsAfasTest": {
+						"type": "Bool"
+					}
+				},
+				"annotations": [],
+				"type": "RestService",
+				"typeProperties": {
+					"url": "[parameters('Afas_Rest_properties_typeProperties_url')]",
+					"enableServerCertificateValidation": true,
+					"authenticationType": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/MasterDB')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('MasterDB_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/MasterVault')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('MasterVault_properties_typeProperties_baseUrl')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/sftp')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "Sftp",
+				"typeProperties": {
+					"host": "[parameters('sftp_properties_typeProperties_host')]",
+					"port": 22,
+					"skipHostKeyValidation": true,
+					"authenticationType": "Basic",
+					"userName": "[parameters('sftp_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('sftp_password')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Afas_Rest')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "Afas_Rest",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"AfasKlantNr": {
+							"value": "@dataset().KlantNr",
+							"type": "Expression"
+						},
+						"IsAfasTest": {
+							"value": "@dataset().Test",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"GetConnectorId": {
+						"type": "string"
+					},
+					"Take": {
+						"type": "int",
+						"defaultValue": 1000
+					},
+					"KlantNr": {
+						"type": "String"
+					},
+					"Test": {
+						"type": "Bool"
+					}
+				},
+				"annotations": [],
+				"type": "RestResource",
+				"typeProperties": {
+					"relativeUrl": {
+						"value": "@concat('connectors/',dataset().GetConnectorId,'?skip={offset}','&take=',string(dataset().Take))",
+						"type": "Expression"
+					}
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/Afas_Rest')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/indexfiles')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "sftp",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"sftpFolderPath": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "SftpLocation",
+						"folderPath": {
+							"value": "@concat(\n    '/',\n    dataset().sftpFolderPath,\n    '/'\n    )",
+							"type": "Expression"
+						}
+					},
+					"columnDelimiter": ";",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "verzuimmelding_id;email_details_id;werknemer_id;folder;from;to;subject;date;login_gebruiker;sofinummer;email_bestand",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/sftp')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/masterdb')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "MasterDB",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/MasterDB')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Database')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"parameters": {
+					"Database": {
+						"type": "String"
+					},
+					"DatabaseUser": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('Database_connectionString')]",
+					"password": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "MasterVault",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": {
+							"value": "@linkedService().Database",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/MasterVault')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Delete dossieritem')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "UploadDoc2AFAS",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "url",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 3,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"url": {
+								"value": "@variables('url')",
+								"type": "Expression"
+							},
+							"method": "DELETE",
+							"headers": {
+								"Authorization": {
+									"value": "@concat(\n    'AfasToken ',base64(pipeline().parameters.AFAS_XMLtoken)\n)",
+									"type": "Expression"
+								},
+								"Content-Type": "application/json; charset=utf-8"
+							}
+						}
+					},
+					{
+						"name": "url",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "url",
+							"value": {
+								"value": "@concat('https://',pipeline().parameters.AFAS_KlantNr,'.rest',if(equals(pipeline().parameters.AFAS_IsTestomgeving, true), 'test',''),'.afas.online/ProfitRestServices/connectors/KnSubject/KnSubject/SbId/',string(pipeline().parameters.dossieritem))",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "delete from log",
+						"type": "Script",
+						"dependsOn": [
+							{
+								"activity": "UploadDoc2AFAS",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"linkedServiceName": {
+							"referenceName": "Database",
+							"type": "LinkedServiceReference"
+						},
+						"typeProperties": {
+							"scripts": [
+								{
+									"type": "NonQuery",
+									"text": {
+										"value": "@concat(\n    'delete from Verwerkt where dossieritem = ', string(pipeline().parameters.dossieritem)\n)",
+										"type": "Expression"
+									}
+								}
+							],
+							"scriptBlockExecutionTimeout": "02:00:00"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"dossieritem": {
+						"type": "int"
+					},
+					"AFAS_XMLtoken": {
+						"type": "string"
+					},
+					"AFAS_KlantNr": {
+						"type": "string"
+					},
+					"AFAS_IsTestomgeving": {
+						"type": "bool"
+					}
+				},
+				"variables": {
+					"url": {
+						"type": "String"
+					}
+				},
+				"folder": {
+					"name": "Delete"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-01-09T09:58:02Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/Database')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Database')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "Database",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"Database": {
+							"value": "@dataset().Database",
+							"type": "Expression"
+						},
+						"DatabaseUser": {
+							"value": "@dataset().DbUser",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"TableName": {
+						"type": "string"
+					},
+					"Database": {
+						"type": "String"
+					},
+					"DbUser": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": {
+						"value": "@dataset().TableName",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/Database')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Default_Get_AFAS_V1')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "GetMapping",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderStoredProcedureName": "[[dbo].[SP_DynMappingsFromAFAS]",
+								"storedProcedureParameters": {
+									"tableName": {
+										"type": "String",
+										"value": {
+											"value": "@pipeline().parameters.TableName",
+											"type": "Expression"
+										}
+									}
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "Database",
+								"type": "DatasetReference",
+								"parameters": {
+									"TableName": {
+										"value": "@pipeline().parameters.TableName",
+										"type": "Expression"
+									},
+									"Database": {
+										"value": "@pipeline().parameters.Database",
+										"type": "Expression"
+									},
+									"DbUser": {
+										"value": "@pipeline().parameters.DbUser",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					},
+					{
+						"name": "GetAFASdata",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "GetMapping",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:01:40",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "GET",
+								"additionalHeaders": {
+									"Authorization": {
+										"value": "@concat('AfasToken ', base64(pipeline().parameters.AfasXmlToken))",
+										"type": "Expression"
+									}
+								},
+								"paginationRules": {
+									"EndCondition:$.rows": "Empty",
+									"QueryParameters.{offset}": {
+										"value": "@concat('RANGE:0::', string(pipeline().parameters.Take))",
+										"type": "Expression"
+									}
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"preCopyScript": {
+									"value": "@{concat('if exists(select 1 from INFORMATION_SCHEMA.TABLES where TABLE_NAME = ''',pipeline().parameters.TableName,''') truncate table ',pipeline().parameters.TableName)}",
+									"type": "Expression"
+								},
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false,
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"value": "@json(activity('GetMapping').output.firstRow.output)",
+								"type": "Expression"
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "Afas_Rest",
+								"type": "DatasetReference",
+								"parameters": {
+									"GetConnectorId": {
+										"value": "@pipeline().parameters.GetConnectorId",
+										"type": "Expression"
+									},
+									"Take": {
+										"value": "@pipeline().parameters.Take",
+										"type": "Expression"
+									},
+									"KlantNr": {
+										"value": "@pipeline().parameters.AfasKlantNr",
+										"type": "Expression"
+									},
+									"Test": {
+										"value": "@pipeline().parameters.IsAfasTest",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "Database",
+								"type": "DatasetReference",
+								"parameters": {
+									"TableName": {
+										"value": "@pipeline().parameters.TableName",
+										"type": "Expression"
+									},
+									"Database": {
+										"value": "@pipeline().parameters.Database",
+										"type": "Expression"
+									},
+									"DbUser": {
+										"value": "@pipeline().parameters.DbUser",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "Count",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "GetAFASdata",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "Count",
+							"value": {
+								"value": "@string(activity('GetAFASdata').output.rowsCopied)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Foutmelding",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "GetAFASdata",
+								"dependencyConditions": [
+									"Failed"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "Foutmelding",
+							"value": {
+								"value": "@activity('GetAFASdata').output.errors[0].Message",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "LOG",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Count",
+								"dependencyConditions": [
+									"Skipped",
+									"Completed"
+								]
+							},
+							{
+								"activity": "Foutmelding",
+								"dependencyConditions": [
+									"Skipped",
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[dbo].[SP_LOG]",
+							"storedProcedureParameters": {
+								"AantalOpgehaald": {
+									"value": {
+										"value": "@int(variables('Count'))",
+										"type": "Expression"
+									},
+									"type": "Int32"
+								},
+								"ActieSuccesfull": {
+									"value": {
+										"value": "@equals(activity('GetAFASdata').output.executionDetails[0].status, 'Succeeded')",
+										"type": "Expression"
+									},
+									"type": "Boolean"
+								},
+								"ApplicatieNaam": {
+									"value": {
+										"value": "@pipeline().parameters._applicatieNaam",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"deleteKlantLogAfterDays": {
+									"value": null,
+									"type": "Int32"
+								},
+								"End": {
+									"value": null,
+									"type": "Boolean"
+								},
+								"Foutmelding": {
+									"value": {
+										"value": "@variables('Foutmelding')",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"GetActie": {
+									"value": "true",
+									"type": "Boolean"
+								},
+								"InfoOmschrijving": {
+									"value": null,
+									"type": "String"
+								},
+								"Koppeling": {
+									"value": "Dossierconversie",
+									"type": "String"
+								},
+								"NaarKlant": {
+									"value": "true",
+									"type": "Boolean"
+								},
+								"Onderdeel": {
+									"value": {
+										"value": "@pipeline().parameters._onderdeel",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"OnderdeelObjectType": {
+									"value": null,
+									"type": "String"
+								},
+								"OnderdeelObjectWaarde": {
+									"value": null,
+									"type": "String"
+								},
+								"ProfitLogReferentie": {
+									"value": null,
+									"type": "String"
+								},
+								"Start": {
+									"value": null,
+									"type": "Boolean"
+								},
+								"UpdateActie": {
+									"value": null,
+									"type": "Boolean"
+								},
+								"UpdateIsMutatie": {
+									"value": null,
+									"type": "Boolean"
+								},
+								"versie": {
+									"value": null,
+									"type": "String"
+								},
+								"WebserviceResultCode": {
+									"value": null,
+									"type": "Int32"
+								},
+								"WebserviceResultText": {
+									"value": null,
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "Database",
+							"type": "LinkedServiceReference",
+							"parameters": {
+								"Database": {
+									"value": "@pipeline().parameters.Database",
+									"type": "Expression"
+								},
+								"DatabaseUser": {
+									"value": "@pipeline().parameters.DbUser",
+									"type": "Expression"
+								}
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"_applicatieNaam": {
+						"type": "string",
+						"defaultValue": "AFAS"
+					},
+					"_onderdeel": {
+						"type": "string"
+					},
+					"GetConnectorId": {
+						"type": "string"
+					},
+					"TableName": {
+						"type": "string"
+					},
+					"Take": {
+						"type": "int",
+						"defaultValue": 10000
+					},
+					"urlParam": {
+						"type": "string"
+					},
+					"AfasKlantNr": {
+						"type": "String"
+					},
+					"IsAfasTest": {
+						"type": "Bool"
+					},
+					"Database": {
+						"type": "String"
+					},
+					"DbUser": {
+						"type": "String"
+					},
+					"AfasXmlToken": {
+						"type": "String"
+					}
+				},
+				"variables": {
+					"Count": {
+						"type": "String",
+						"defaultValue": "-1"
+					},
+					"Foutmelding": {
+						"type": "String"
+					}
+				},
+				"folder": {
+					"name": "V1/GET V1/AFAS V1"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-01-02T14:39:13Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Database')]",
+				"[concat(variables('factoryId'), '/datasets/Afas_Rest')]",
+				"[concat(variables('factoryId'), '/linkedServices/Database')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/GetIndexFiles')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get FileList",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "indexfiles",
+								"type": "DatasetReference",
+								"parameters": {
+									"sftpFolderPath": {
+										"value": "@pipeline().parameters.sFTPpath",
+										"type": "Expression"
+									}
+								}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "SftpReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false,
+								"disableChunking": false
+							},
+							"formatSettings": {
+								"type": "DelimitedTextReadSettings"
+							}
+						}
+					},
+					{
+						"name": "ForEach",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Get FileList",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get FileList').output.childItems",
+								"type": "Expression"
+							},
+							"isSequential": false,
+							"activities": [
+								{
+									"name": "Copy data",
+									"type": "Copy",
+									"dependsOn": [
+										{
+											"activity": "GetTable",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "DelimitedTextSource",
+											"storeSettings": {
+												"type": "SftpReadSettings",
+												"recursive": true,
+												"wildcardFileName": {
+													"value": "@item().name",
+													"type": "Expression"
+												},
+												"enablePartitionDiscovery": false,
+												"disableChunking": false
+											},
+											"formatSettings": {
+												"type": "DelimitedTextReadSettings"
+											}
+										},
+										"sink": {
+											"type": "AzureSqlSink",
+											"preCopyScript": {
+												"value": "@{concat(\n    'if exists(select 1 from INFORMATION_SCHEMA.TABLES where TABLE_NAME = ''',activity('GetTable').output.firstRow.tableName,''') ', 'truncate table [',activity('GetTable').output.firstRow.tableName,']'\n)}",
+												"type": "Expression"
+											},
+											"writeBehavior": "insert",
+											"sqlWriterUseTableLock": false,
+											"tableOption": "autoCreate",
+											"disableMetricsCollection": false
+										},
+										"enableStaging": false,
+										"translator": {
+											"value": "@json(activity('GetTable').output.firstRow.mapping)",
+											"type": "Expression"
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "indexfiles",
+											"type": "DatasetReference",
+											"parameters": {
+												"sftpFolderPath": {
+													"value": "@pipeline().parameters.sFTPpath",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "Database",
+											"type": "DatasetReference",
+											"parameters": {
+												"TableName": {
+													"value": "@activity('GetTable').output.firstRow.tableName",
+													"type": "Expression"
+												},
+												"Database": {
+													"value": "@pipeline().parameters.Database",
+													"type": "Expression"
+												},
+												"DbUser": {
+													"value": "@pipeline().parameters.DbUser",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								},
+								{
+									"name": "GetTable",
+									"type": "Lookup",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderStoredProcedureName": "[[dbo].[USP_GETTABLEFROMFILENAME]",
+											"storedProcedureParameters": {
+												"fileName": {
+													"type": "String",
+													"value": {
+														"value": "@item().name",
+														"type": "Expression"
+													}
+												}
+											},
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"dataset": {
+											"referenceName": "Database",
+											"type": "DatasetReference",
+											"parameters": {
+												"TableName": "-",
+												"Database": {
+													"value": "@pipeline().parameters.Database",
+													"type": "Expression"
+												},
+												"DbUser": {
+													"value": "@pipeline().parameters.DbUser",
+													"type": "Expression"
+												}
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"sFTPpath": {
+						"type": "string"
+					},
+					"Database": {
+						"type": "string"
+					},
+					"DbUser": {
+						"type": "string"
+					}
+				},
+				"variables": {
+					"Name": {
+						"type": "String"
+					}
+				},
+				"folder": {
+					"name": "Index"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-01-02T14:36:12Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/indexfiles')]",
+				"[concat(variables('factoryId'), '/datasets/Database')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/GetMeta')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get omgeving",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"additionalColumns": [
+									{
+										"name": "Key",
+										"value": "Omgeving"
+									}
+								],
+								"httpRequestTimeout": "00:01:40",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "GET",
+								"paginationRules": {
+									"supportRFC5988": "true"
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"writeBehavior": "upsert",
+								"upsertSettings": {
+									"useTempDB": true,
+									"keys": [
+										"key"
+									]
+								},
+								"sqlWriterUseTableLock": false,
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"path": "$['info']['envid']"
+										},
+										"sink": {
+											"name": "value",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"path": "$['Key']"
+										},
+										"sink": {
+											"name": "key",
+											"type": "String"
+										}
+									}
+								]
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "Afas_Rest",
+								"type": "DatasetReference",
+								"parameters": {
+									"GetConnectorId": "metainfo",
+									"Take": 100,
+									"KlantNr": {
+										"value": "@pipeline().parameters.AfasKlantNr",
+										"type": "Expression"
+									},
+									"Test": {
+										"value": "@pipeline().parameters.IsAfasTest",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "Database",
+								"type": "DatasetReference",
+								"parameters": {
+									"TableName": "System_ProjectParams",
+									"Database": {
+										"value": "@pipeline().parameters.Database",
+										"type": "Expression"
+									},
+									"DbUser": {
+										"value": "@pipeline().parameters.DbUser",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "Omgeving2klantNr",
+						"type": "Script",
+						"dependsOn": [
+							{
+								"activity": "Get omgeving",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"linkedServiceName": {
+							"referenceName": "Database",
+							"type": "LinkedServiceReference",
+							"parameters": {
+								"Database": {
+									"value": "@pipeline().parameters.Database",
+									"type": "Expression"
+								},
+								"DatabaseUser": {
+									"value": "@pipeline().parameters.DbUser",
+									"type": "Expression"
+								}
+							}
+						},
+						"typeProperties": {
+							"scripts": [
+								{
+									"type": "NonQuery",
+									"text": "delete from System_ProjectParams where [key] = 'KlantNr'\ninsert into System_ProjectParams select 'KlantNr', substring([value], 2, 5) from System_ProjectParams where [key] = 'Omgeving'"
+								}
+							],
+							"scriptBlockExecutionTimeout": "02:00:00"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"AfasKlantNr": {
+						"type": "String"
+					},
+					"IsAfasTest": {
+						"type": "Bool"
+					},
+					"Database": {
+						"type": "String"
+					},
+					"DbUser": {
+						"type": "String"
+					}
+				},
+				"folder": {
+					"name": "V1/GET V1/AFAS V1"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-01-02T11:45:30Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Afas_Rest')]",
+				"[concat(variables('factoryId'), '/datasets/Database')]",
+				"[concat(variables('factoryId'), '/linkedServices/Database')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Items to delete')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Items to delete",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "@pipeline().parameters.deleteQry",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "Database",
+								"type": "DatasetReference",
+								"parameters": {
+									"TableName": "-",
+									"Database": {
+										"value": "@pipeline().parameters.Database",
+										"type": "Expression"
+									},
+									"DbUser": {
+										"value": "@pipeline().parameters.DbUser",
+										"type": "Expression"
+									}
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Delete item",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Items to delete",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Items to delete').output.value",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Delete dossieritem",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "Delete dossieritem",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"dossieritem": {
+												"value": "@item().Dossieritem",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"deleteQry": {
+						"type": "string",
+						"defaultValue": "select Dossieritem from verwerkt"
+					},
+					"Database": {
+						"type": "string"
+					},
+					"DbUser": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "Delete"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-01-09T09:58:02Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Database')]",
+				"[concat(variables('factoryId'), '/pipelines/Delete dossieritem')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/GET AFAS')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get GetConnectoren with params",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "Database",
+								"type": "DatasetReference",
+								"parameters": {
+									"TableName": "VW_PipeLineParams",
+									"Database": {
+										"value": "@pipeline().parameters.Database",
+										"type": "Expression"
+									},
+									"DbUser": {
+										"value": "@pipeline().parameters.DbUser",
+										"type": "Expression"
+									}
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "ForEach row",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Get GetConnectoren with params",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get GetConnectoren with params').output.value",
+								"type": "Expression"
+							},
+							"isSequential": false,
+							"batchCount": 4,
+							"activities": [
+								{
+									"name": "Get AFAS data",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "Default_Get_AFAS_V1",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"_applicatieNaam": "AFAS",
+											"_onderdeel": {
+												"value": "@item().Onderdeel",
+												"type": "Expression"
+											},
+											"GetConnectorId": {
+												"value": "@item().getConnector",
+												"type": "Expression"
+											},
+											"TableName": {
+												"value": "@item().tableName",
+												"type": "Expression"
+											},
+											"Take": {
+												"value": "@item().Take",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"Database": {
+						"type": "string"
+					},
+					"DbUser": {
+						"type": "string"
+					},
+					"AfasKlantNr": {
+						"type": "string"
+					},
+					"IsAfasTest": {
+						"type": "bool",
+						"defaultValue": false
+					}
+				},
+				"folder": {
+					"name": "Download"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-01-02T21:46:09Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Database')]",
+				"[concat(variables('factoryId'), '/pipelines/Default_Get_AFAS_V1')]"
+			]
+		}
+	]
+}

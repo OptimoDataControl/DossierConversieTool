@@ -1,0 +1,92 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "adf-opt-DossierConversieTool"
+		},
+		"Database_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'Database'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=sql-dc-conversies.database.windows.net;Initial Catalog=@{linkedService().Database};User ID=@{linkedService().DatabaseUser}"
+		},
+		"MasterDB_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'MasterDB'"
+		},
+		"sftp_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'sftp'"
+		},
+		"Afas_Rest_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "@{concat('https://', linkedService().AfasKlantNr,'.rest',if(equals(linkedService().IsAfasTest, true), 'test', ''),'.afas.online/ProfitRestServices/')}"
+		},
+		"MasterVault_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://kv-opt-databases.vault.azure.net/"
+		},
+		"sftp_properties_typeProperties_host": {
+			"type": "string",
+			"defaultValue": "ftp.optimo.nl"
+		},
+		"sftp_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "datacontrol@optimo.nl"
+		},
+		"containerUri": {
+			"type": "string",
+			"metadata": "URI to storage account containing linked ARM templates"
+		},
+		"containerSasToken": {
+			"type": "string",
+			"metadata": "Sas token to storage account containing linked ARM templates"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "adf-opt-DossierConversieTool_ArmTemplate_0",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2018-02-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_0.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"MasterDB_connectionString": {
+						"value": "[parameters('MasterDB_connectionString')]"
+					},
+					"sftp_password": {
+						"value": "[parameters('sftp_password')]"
+					},
+					"Database_connectionString": {
+						"value": "[parameters('Database_connectionString')]"
+					},
+					"Afas_Rest_properties_typeProperties_url": {
+						"value": "[parameters('Afas_Rest_properties_typeProperties_url')]"
+					},
+					"MasterVault_properties_typeProperties_baseUrl": {
+						"value": "[parameters('MasterVault_properties_typeProperties_baseUrl')]"
+					},
+					"sftp_properties_typeProperties_host": {
+						"value": "[parameters('sftp_properties_typeProperties_host')]"
+					},
+					"sftp_properties_typeProperties_userName": {
+						"value": "[parameters('sftp_properties_typeProperties_userName')]"
+					}
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}
