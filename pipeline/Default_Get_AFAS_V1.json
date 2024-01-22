@@ -137,6 +137,14 @@
 							"TableName": {
 								"value": "@pipeline().parameters.TableName",
 								"type": "Expression"
+							},
+							"Database": {
+								"value": "@pipeline().parameters.Database",
+								"type": "Expression"
+							},
+							"DbUser": {
+								"value": "@pipeline().parameters.DbUser",
+								"type": "Expression"
 							}
 						}
 					}

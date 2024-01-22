@@ -28,7 +28,15 @@
 						"referenceName": "Database",
 						"type": "DatasetReference",
 						"parameters": {
-							"TableName": "-"
+							"TableName": "-",
+							"Database": {
+								"value": "@pipeline().parameters.Database",
+								"type": "Expression"
+							},
+							"DbUser": {
+								"value": "@pipeline().parameters.DbUser",
+								"type": "Expression"
+							}
 						}
 					},
 					"firstRowOnly": false
@@ -79,6 +87,12 @@
 			"deleteQry": {
 				"type": "string",
 				"defaultValue": "select Dossieritem from verwerkt"
+			},
+			"Database": {
+				"type": "string"
+			},
+			"DbUser": {
+				"type": "string"
 			}
 		},
 		"folder": {
