@@ -2,10 +2,10 @@
 	"name": "Database",
 	"properties": {
 		"parameters": {
-			"Database": {
+			"DatabaseUser": {
 				"type": "String"
 			},
-			"DatabaseUser": {
+			"DatabaseName": {
 				"type": "String"
 			}
 		},
@@ -19,10 +19,7 @@
 					"referenceName": "MasterVault",
 					"type": "LinkedServiceReference"
 				},
-				"secretName": {
-					"value": "@linkedService().Database",
-					"type": "Expression"
-				}
+				"secretName": "db-opt-PieterRaat-Dossier2024"
 			}
 		}
 	},
