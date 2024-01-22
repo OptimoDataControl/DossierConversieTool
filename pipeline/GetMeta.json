@@ -73,7 +73,15 @@
 						"type": "DatasetReference",
 						"parameters": {
 							"GetConnectorId": "metainfo",
-							"Take": 100
+							"Take": 100,
+							"KlantNr": {
+								"value": "@pipeline().parameters.AfasKlantNr",
+								"type": "Expression"
+							},
+							"Test": {
+								"value": "@pipeline().parameters.IsAfasTest",
+								"type": "Expression"
+							}
 						}
 					}
 				],
@@ -82,7 +90,15 @@
 						"referenceName": "Database",
 						"type": "DatasetReference",
 						"parameters": {
-							"TableName": "System_ProjectParams"
+							"TableName": "System_ProjectParams",
+							"Database": {
+								"value": "@pipeline().parameters.Database",
+								"type": "Expression"
+							},
+							"DbUser": {
+								"value": "@pipeline().parameters.DbUser",
+								"type": "Expression"
+							}
 						}
 					}
 				]
@@ -121,6 +137,20 @@
 				}
 			}
 		],
+		"parameters": {
+			"AfasKlantNr": {
+				"type": "String"
+			},
+			"IsAfasTest": {
+				"type": "Bool"
+			},
+			"Database": {
+				"type": "String"
+			},
+			"DbUser": {
+				"type": "String"
+			}
+		},
 		"folder": {
 			"name": "V1/GET V1/AFAS V1"
 		},
