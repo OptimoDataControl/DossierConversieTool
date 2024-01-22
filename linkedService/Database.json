@@ -1,5 +1,6 @@
 {
 	"name": "Database",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
 	"properties": {
 		"parameters": {
 			"DatabaseUser": {
@@ -7,21 +8,15 @@
 			},
 			"DatabaseName": {
 				"type": "String"
+			},
+			"DbPassword": {
+				"type": "String"
 			}
 		},
 		"annotations": [],
 		"type": "AzureSqlDatabase",
 		"typeProperties": {
-			"connectionString": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=sql-dc-conversies.database.windows.net;Initial Catalog=@{linkedService().Database};User ID=@{linkedService().DatabaseUser}",
-			"password": {
-				"type": "AzureKeyVaultSecret",
-				"store": {
-					"referenceName": "MasterVault",
-					"type": "LinkedServiceReference"
-				},
-				"secretName": "db-opt-PieterRaat-Dossier2024"
-			}
+			"connectionString": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=sql-dc-conversies.database.windows.net;Initial Catalog=@{linkedService().DatabaseName};User ID=@{linkedService().DatabaseUser};Password=@{linkedService().DbPassword}"
 		}
-	},
-	"type": "Microsoft.DataFactory/factories/linkedservices"
+	}
 }
