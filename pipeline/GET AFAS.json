@@ -28,6 +28,10 @@
 							"Database": {
 								"value": "@pipeline().parameters.Database",
 								"type": "Expression"
+							},
+							"DbUser": {
+								"value": "@pipeline().parameters.DbUser",
+								"type": "Expression"
 							}
 						}
 					},
@@ -66,17 +70,17 @@
 								},
 								"waitOnCompletion": true,
 								"parameters": {
+									"_applicatieNaam": "AFAS",
+									"_onderdeel": {
+										"value": "@item().Onderdeel",
+										"type": "Expression"
+									},
 									"GetConnectorId": {
 										"value": "@item().getConnector",
 										"type": "Expression"
 									},
 									"TableName": {
 										"value": "@item().tableName",
-										"type": "Expression"
-									},
-									"_applicatieNaam": "AFAS",
-									"_onderdeel": {
-										"value": "@item().Onderdeel",
 										"type": "Expression"
 									},
 									"Take": {

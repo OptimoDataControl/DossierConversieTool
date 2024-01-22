@@ -37,6 +37,14 @@
 							"TableName": {
 								"value": "@pipeline().parameters.TableName",
 								"type": "Expression"
+							},
+							"Database": {
+								"value": "@pipeline().parameters.Database",
+								"type": "Expression"
+							},
+							"DbUser": {
+								"value": "@pipeline().parameters.DbUser",
+								"type": "Expression"
 							}
 						}
 					}
@@ -102,6 +110,14 @@
 							},
 							"Take": {
 								"value": "@pipeline().parameters.Take",
+								"type": "Expression"
+							},
+							"KlantNr": {
+								"value": "@pipeline().parameters.AfasKlantNr",
+								"type": "Expression"
+							},
+							"Test": {
+								"value": "@pipeline().parameters.IsAfasTest",
 								"type": "Expression"
 							}
 						}
@@ -297,7 +313,17 @@
 				},
 				"linkedServiceName": {
 					"referenceName": "Database",
-					"type": "LinkedServiceReference"
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"Database": {
+							"value": "@pipeline().parameters.Database",
+							"type": "Expression"
+						},
+						"DatabaseUser": {
+							"value": "@pipeline().parameters.DbUser",
+							"type": "Expression"
+						}
+					}
 				}
 			}
 		],
@@ -321,6 +347,18 @@
 			},
 			"urlParam": {
 				"type": "string"
+			},
+			"AfasKlantNr": {
+				"type": "String"
+			},
+			"IsAfasTest": {
+				"type": "Bool"
+			},
+			"Database": {
+				"type": "String"
+			},
+			"DbUser": {
+				"type": "String"
 			}
 		},
 		"variables": {

@@ -3,7 +3,17 @@
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "Afas_Rest",
-			"type": "LinkedServiceReference"
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"AfasKlantNr": {
+					"value": "@dataset().KlantNr",
+					"type": "Expression"
+				},
+				"IsAfasTest": {
+					"value": "@dataset().Test",
+					"type": "Expression"
+				}
+			}
 		},
 		"parameters": {
 			"GetConnectorId": {
@@ -12,6 +22,12 @@
 			"Take": {
 				"type": "int",
 				"defaultValue": 1000
+			},
+			"KlantNr": {
+				"type": "String"
+			},
+			"Test": {
+				"type": "Bool"
 			}
 		},
 		"annotations": [],
