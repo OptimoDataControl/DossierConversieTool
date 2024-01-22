@@ -24,7 +24,11 @@
 						"referenceName": "Database",
 						"type": "DatasetReference",
 						"parameters": {
-							"TableName": "VW_PipeLineParams"
+							"TableName": "VW_PipeLineParams",
+							"Database": {
+								"value": "@pipeline().parameters.Database",
+								"type": "Expression"
+							}
 						}
 					},
 					"firstRowOnly": false
@@ -86,6 +90,21 @@
 				}
 			}
 		],
+		"parameters": {
+			"Database": {
+				"type": "string"
+			},
+			"DbUser": {
+				"type": "string"
+			},
+			"AfasKlantNr": {
+				"type": "string"
+			},
+			"IsAfasTest": {
+				"type": "bool",
+				"defaultValue": false
+			}
+		},
 		"folder": {
 			"name": "Download"
 		},
