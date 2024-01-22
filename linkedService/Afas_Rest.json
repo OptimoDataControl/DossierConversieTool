@@ -1,19 +1,21 @@
 {
 	"name": "Afas_Rest",
-	"type": "Microsoft.DataFactory/factories/linkedservices",
 	"properties": {
+		"parameters": {
+			"AfasKlantNr": {
+				"type": "String"
+			},
+			"IsAfasTest": {
+				"type": "Bool"
+			}
+		},
 		"annotations": [],
 		"type": "RestService",
 		"typeProperties": {
-			"url": "https://68522.rest.afas.online/ProfitRestServices/",
+			"url": "@{concat('https://', linkedService().AfasKlantNr,'.rest',if(equals(linkedService().IsAfasTest, true), 'test', ''),'.afas.online/ProfitRestServices/')}",
 			"enableServerCertificateValidation": true,
-			"authenticationType": "Anonymous",
-			"authHeaders": {
-				"Authorization": {
-					"type": "SecureString",
-					"value": "**********"
-				}
-			}
+			"authenticationType": "Anonymous"
 		}
-	}
+	},
+	"type": "Microsoft.DataFactory/factories/linkedservices"
 }
