@@ -385,6 +385,14 @@
 								"DatabaseUser": {
 									"value": "@pipeline().parameters.DbUser",
 									"type": "Expression"
+								},
+								"DatabaseName": {
+									"value": "@pipeline().parameters.Database",
+									"type": "Expression"
+								},
+								"DbPassword": {
+									"value": "@pipeline().parameters.DbPassword",
+									"type": "Expression"
 								}
 							}
 						}
@@ -480,10 +488,6 @@
 						},
 						"userProperties": [],
 						"typeProperties": {
-							"url": {
-								"value": "@variables('url')",
-								"type": "Expression"
-							},
 							"method": "DELETE",
 							"headers": {
 								"Authorization": {
@@ -491,6 +495,10 @@
 									"type": "Expression"
 								},
 								"Content-Type": "application/json; charset=utf-8"
+							},
+							"url": {
+								"value": "@variables('url')",
+								"type": "Expression"
 							}
 						}
 					},
