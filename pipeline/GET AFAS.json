@@ -102,7 +102,7 @@
 										"type": "Expression"
 									},
 									"AfasKlantNr": {
-										"value": "@pipeline().parameters.AfasKlantNr",
+										"value": "@if(contains(item(),'omgeving'), substring(item().omgeving,1,5), pipeline().parameters.AfasKlantNr)",
 										"type": "Expression"
 									},
 									"IsAfasTest": {
