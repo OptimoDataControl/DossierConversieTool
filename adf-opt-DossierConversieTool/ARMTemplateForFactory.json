@@ -657,7 +657,17 @@
 								{
 									"name": "Get AFAS data",
 									"type": "ExecutePipeline",
-									"dependsOn": [],
+									"dependsOn": [
+										{
+											"activity": "Get AFAS auth",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureInput": false
+									},
 									"userProperties": [],
 									"typeProperties": {
 										"pipeline": {
@@ -684,7 +694,7 @@
 												"type": "Expression"
 											},
 											"AfasKlantNr": {
-												"value": "@pipeline().parameters.AfasKlantNr",
+												"value": "@if(contains(item(),'omgeving'), substring(item().omgeving,1,5), pipeline().parameters.AfasKlantNr)",
 												"type": "Expression"
 											},
 											"IsAfasTest": {
@@ -700,13 +710,38 @@
 												"type": "Expression"
 											},
 											"AfasXmlToken": {
-												"value": "@pipeline().parameters.AfasXmlToken",
+												"value": "@if(contains(item(), 'omgeving'), activity('Get AFAS auth').output.value, pipeline().parameters.AfasXmlToken)",
 												"type": "Expression"
 											},
 											"DbPassword": {
 												"value": "@pipeline().parameters.DbPassword",
 												"type": "Expression"
 											}
+										}
+									}
+								},
+								{
+									"name": "Get AFAS auth",
+									"type": "WebActivity",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"method": "GET",
+										"headers": {},
+										"url": {
+											"value": "@concat(\n    'https://kv-opt-dossierconversies.vault.azure.net/',\n    'secrets/',\n    if(contains(item(),'omgeving'), item().omgeving, pipeline().parameters.AfasKlantNr),\n    '?api-version=7.3'\n)",
+											"type": "Expression"
+										},
+										"authentication": {
+											"type": "MSI",
+											"resource": "https://vault.azure.net"
 										}
 									}
 								}
@@ -1242,6 +1277,9 @@
 									"name": "Delete dossieritem",
 									"type": "ExecutePipeline",
 									"dependsOn": [],
+									"policy": {
+										"secureInput": false
+									},
 									"userProperties": [],
 									"typeProperties": {
 										"pipeline": {
